@@ -249,6 +249,12 @@ nnoremap <leader>E :Lexplore %:p:h<CR>
 " Ctrl-v mirrors netrw's own 'v' (open under cursor in a vertical split)
 autocmd FileType netrw nnoremap <buffer> <C-v> v
 
+" Strip the global number/sign/cursorline/colorcolumn gutters from the sidebar -
+" they don't apply to a file tree and were showing up as a stray blank column.
+" winfixwidth stops other splits opening/closing from resizing the sidebar.
+autocmd FileType netrw setlocal winfixwidth nonumber norelativenumber
+    \ signcolumn=no nocursorline colorcolumn= statusline=\ Explorer
+
 
 " ==============================================================================
 "  FZF
