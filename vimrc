@@ -13,11 +13,6 @@ let mapleader = " "
 
 call plug#begin()
 
-" -- Appearance ----------------------------------------------------------------
-Plug 'joshdick/onedark.vim'
-Plug 'vim-airline/vim-airline'
-Plug 'vim-airline/vim-airline-themes'
-
 " -- Editor behaviour ----------------------------------------------------------
 Plug 'RRethy/vim-illuminate'          " highlight other uses of word under cursor
 Plug 'tpope/vim-commentary'           " gc / gcc to comment lines
@@ -130,19 +125,14 @@ set wildignore+=*.o,*.so,*.pyc,*/.git/*,*/build/*,*/tmp/*
 
 
 " ==============================================================================
-"  COLOURS
+"  COLOURS  -  plain built-in scheme, black background, no plugin/truecolour
 " ==============================================================================
 
-" Enable 24-bit colour if terminal supports it, fall back gracefully
-if exists("+termguicolors")
-    let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"
-    let &t_8b = "\<Esc>[48;2;%lu;%lu;%lum"
-    set termguicolors
-endif
-set t_Co=256
-silent! colorscheme onedark
-hi CursorLineNr guifg=#ffffff
-hi ColorColumn  guibg=#2c2f3a
+set background=dark
+colorscheme default
+hi Normal      ctermbg=black
+hi ColorColumn ctermbg=234        " barely-there dark grey guide at colorcolumn
+hi CursorLine  cterm=none ctermbg=234
 
 
 " ==============================================================================
@@ -458,19 +448,14 @@ endfunction
 
 
 " ==============================================================================
-"  AIRLINE
+"  STATUSLINE  (built-in, no plugin)
 " ==============================================================================
 
-let g:airline_theme                           = 'onedark'
-let g:airline_powerline_fonts                 = 0
-let g:airline_left_sep                        = ''
-let g:airline_right_sep                       = ''
-let g:airline_left_alt_sep                    = '|'
-let g:airline_right_alt_sep                   = '|'
-let g:airline#extensions#tabline#enabled      = 1
-let g:airline#extensions#tabline#fnamemod     = ':t'
-let g:airline#extensions#lsp#enabled           = 1
-let g:airline#extensions#fugitiveline#enabled = 1
+set laststatus=2
+set statusline=\ %<%f\ %h%m%r                                    " filename, flags
+set statusline+=%{exists('*FugitiveHead')\ &&\ FugitiveHead()!=''\ ?\ '\ \ ('.FugitiveHead().')'\ :\ ''}
+set statusline+=%=                                               " right-align from here
+set statusline+=%y\ %l:%c\ %p%%\                                 " filetype, line:col, %
 
 
 " ==============================================================================
@@ -478,9 +463,9 @@ let g:airline#extensions#fugitiveline#enabled = 1
 " ==============================================================================
 
 let g:Illuminate_delay = 200
-hi IlluminatedWordText  gui=underline
-hi IlluminatedWordRead  gui=underline
-hi IlluminatedWordWrite gui=underline
+hi IlluminatedWordText  cterm=underline gui=underline
+hi IlluminatedWordRead  cterm=underline gui=underline
+hi IlluminatedWordWrite cterm=underline gui=underline
 
 
 " ==============================================================================
