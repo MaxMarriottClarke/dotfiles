@@ -134,6 +134,11 @@ hi Normal      ctermbg=black
 hi ColorColumn ctermbg=234        " barely-there dark grey guide at colorcolumn
 hi CursorLine  cterm=none ctermbg=234
 
+" Thin bar cursor in every mode (Vim's default block in normal mode
+" overrides the terminal's own cursor style via DECSCUSR) - matches the
+" thin-line beam cursor set in the Alacritty config.
+set guicursor=a:ver25-blinkon0
+
 
 " ==============================================================================
 "  KEYMAPS
