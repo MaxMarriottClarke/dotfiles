@@ -125,14 +125,73 @@ set wildignore+=*.o,*.so,*.pyc,*/.git/*,*/build/*,*/tmp/*
 
 
 " ==============================================================================
-"  COLOURS  -  plain built-in scheme, black background, no plugin/truecolour
+"  COLOURS  -  plain built-in scheme, black background, pink accent
+"
+"  Palette (matches Alacritty + tmux + bashrc so every surface agrees):
+"    black  ctermbg=black / 234   background & subtle panels
+"    grey   239 / 245             structure: line numbers, splits, dim text
+"    pink   205                   the ONE accent - cursor line, selection,
+"                                  search, current-window/identity markers
+"    red 203 / green 114 / yellow 179   functional only (errors/added/warn)
+"  Left as plain built-in highlighting (no colorscheme plugin, no
+"  truecolour) - just pinning every group that otherwise falls back to a
+"  mismatched default.
 " ==============================================================================
 
 set background=dark
 colorscheme default
-hi Normal      ctermbg=black
-hi ColorColumn ctermbg=234        " barely-there dark grey guide at colorcolumn
+
+" -- Core surfaces --------------------------------------------------------------
+hi Normal      ctermbg=black ctermfg=253
+hi NonText     ctermbg=black ctermfg=239        " ~ at end of buffer, no longer stark white
+hi EndOfBuffer ctermbg=black ctermfg=239
+hi ColorColumn ctermbg=234                       " barely-there dark grey guide at colorcolumn
 hi CursorLine  cterm=none ctermbg=234
+hi VertSplit   ctermbg=black ctermfg=239
+hi WinSeparator ctermbg=black ctermfg=239
+
+" -- Gutter (this is what was showing as a stray white-ish column) --------------
+hi SignColumn    ctermbg=black
+hi LineNr        ctermbg=black ctermfg=239
+hi CursorLineNr  ctermbg=234   ctermfg=205 cterm=bold   " pink - marks your line
+
+" -- Selection / search - mirrors Alacritty's pink selection --------------------
+hi Visual   ctermbg=239 ctermfg=253
+hi Search   ctermbg=205 ctermfg=black
+hi IncSearch ctermbg=205 ctermfg=black
+hi MatchParen ctermbg=239 ctermfg=205 cterm=bold
+
+" -- Popup / completion menu -----------------------------------------------------
+hi Pmenu     ctermbg=234 ctermfg=253
+hi PmenuSel  ctermbg=205 ctermfg=black
+hi PmenuSbar ctermbg=234
+hi PmenuThumb ctermbg=239
+
+" -- Misc built-ins ---------------------------------------------------------------
+hi Comment   ctermfg=239
+hi Special   ctermfg=239          " netrw's tree-bars link here - was a loud pink, now a quiet grey
+hi Directory ctermfg=205 cterm=bold
+hi Question  ctermfg=205
+hi StatusLine   ctermbg=234 ctermfg=253 cterm=none
+hi StatusLineNC ctermbg=234 ctermfg=239 cterm=none
+
+" -- Diff / gitgutter - keep functional colour, but from the shared palette ------
+hi DiffAdd    ctermbg=234 ctermfg=114
+hi DiffChange ctermbg=234 ctermfg=179
+hi DiffDelete ctermbg=234 ctermfg=203
+hi DiffText   ctermbg=234 ctermfg=205
+hi GitGutterAdd          ctermbg=black ctermfg=114
+hi GitGutterChange       ctermbg=black ctermfg=179
+hi GitGutterDelete       ctermbg=black ctermfg=203
+hi GitGutterChangeDelete ctermbg=black ctermfg=179
+
+" -- LSP diagnostics - same functional colours as gitgutter/git diff -------------
+hi LspErrorHighlight       ctermfg=203
+hi LspWarningHighlight     ctermfg=179
+hi LspInformationHighlight ctermfg=239
+hi LspHintHighlight        ctermfg=239
+hi LspErrorText            ctermfg=203
+hi LspWarningText          ctermfg=179
 
 " Thin bar cursor in every mode (Vim's default block in normal mode
 " overrides the terminal's own cursor style via DECSCUSR) - matches the

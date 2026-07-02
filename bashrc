@@ -69,16 +69,18 @@ shopt -s direxpand      # expand variables in directory completion
 __prompt_build() {
     local exit_code=$?      # capture FIRST - must be before anything else
 
-    # -- colour palette --------------------------------------------------------
+    # -- colour palette ---------------------------------------------------------
+    # Same as Alacritty/vim/tmux: black bg, one pink accent, grey for structure.
+    # Red/green/yellow are kept but used ONLY for genuine status (error/ok/dirty),
+    # never for decoration - that's what made the old prompt feel busy.
     local reset='\[\e[0m\]'
     local bold='\[\e[1m\]'
     local red='\[\e[38;5;203m\]'
     local green='\[\e[38;5;114m\]'
     local yellow='\[\e[38;5;179m\]'
-    local blue='\[\e[38;5;110m\]'
-    local cyan='\[\e[38;5;116m\]'
+    local pink='\[\e[38;5;205m\]'
     local gray='\[\e[38;5;245m\]'
-    local white='\[\e[38;5;252m\]'
+    local white='\[\e[38;5;253m\]'
 
     # -- CMSSW zone ------------------------------------------------------------
     local cms_zone=""
@@ -87,9 +89,9 @@ __prompt_build() {
         release=$(basename "$CMSSW_BASE")
         # Check whether cwd is actually inside this CMSSW tree
         if [[ "$PWD" == "$CMSSW_BASE"* ]]; then
-            cms_zone="${gray}[${cyan}${release}${green} ok${gray}]${reset} "
+            cms_zone="${gray}[${pink}${release}${green} ok${gray}]${reset} "
         else
-            cms_zone="${gray}[${cyan}${release}${yellow} ~${gray}]${reset} "
+            cms_zone="${gray}[${pink}${release}${yellow} ~${gray}]${reset} "
         fi
     fi
 
@@ -99,7 +101,7 @@ __prompt_build() {
     if [[ -n "$CMSSW_BASE" ]]; then
         dir="${dir/#${CMSSW_BASE}\/src/@cms}"
     fi
-    local path_zone="${blue}${dir}${reset}"
+    local path_zone="${white}${dir}${reset}"
 
     # -- git zone --------------------------------------------------------------
     local git_zone=""
@@ -111,7 +113,7 @@ __prompt_build() {
             git_status=$(git status --porcelain 2>/dev/null)
             local dirty=""
             [[ -n "$git_status" ]] && dirty="${yellow} *${reset}"
-            git_zone="  ${gray}  ${white}${branch}${dirty}${reset}"
+            git_zone="  ${gray}  ${pink}${branch}${dirty}${reset}"
         fi
     fi
 
@@ -126,7 +128,7 @@ __prompt_build() {
     # -- assemble --------------------------------------------------------------
     local host_zone=""
     if [[ -n "$SSH_CONNECTION" ]]; then
-        host_zone="${gray}(${yellow}$(hostname -s)${gray}) ${reset}"
+        host_zone="${gray}($(hostname -s)) ${reset}"
     fi
     PS1="${host_zone}${cms_zone}${path_zone}${git_zone}\n${prompt_char} "
 }
@@ -160,10 +162,10 @@ export FZF_DEFAULT_OPTS="
   --pointer='>'
   --marker='*'
   --separator=''
-  --color=fg:#c0caf5,bg:-1,hl:#7aa2f7
-  --color=fg+:#c0caf5,bg+:#1a1b26,hl+:#7aa2f7
-  --color=info:#7dcfff,prompt:#7dcfff,pointer:#bb9af7
-  --color=marker:#9ece6a,spinner:#9ece6a
+  --color=fg:#e6e6e6,bg:-1,hl:#ff6ac1
+  --color=fg+:#ffffff,bg+:#1a1a1a,hl+:#ff6ac1
+  --color=info:#828282,prompt:#ff6ac1,pointer:#ff6ac1
+  --color=marker:#7ecb8f,spinner:#7ecb8f,header:#828282
 "
 
 # Ctrl+T: fuzzy-insert any file path at cursor
