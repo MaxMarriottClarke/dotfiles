@@ -20,7 +20,7 @@ Plug 'tpope/vim-surround'             " cs\"' to change surrounding quotes etc.
 Plug 'jiangmiao/auto-pairs'           " auto-close brackets, quotes
 
 " -- File navigation -----------------------------------------------------------
-Plug 'tpope/vim-vinegar'              " enhances built-in netrw (see FILE EXPLORER)
+Plug 'preservim/nerdtree'             " tree explorer sidebar (see FILE EXPLORER)
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
 
@@ -112,6 +112,15 @@ set clipboard=unnamedplus
 set splitbelow
 set splitright
 
+" -- Auto-equalize split sizes --------------------------------------------------
+" Re-equalize on every new window/resize so splits stay evenly sized instead
+" of drifting odd as panes open and close. winfixwidth (NERDTree's sidebar, set
+" automatically) and winfixheight (terminal toggle, set below) stay exempt.
+augroup auto_equalize_splits
+    autocmd!
+    autocmd VimResized,WinNew * wincmd =
+augroup END
+
 " -- Performance ---------------------------------------------------------------
 set lazyredraw
 set ttyfast
@@ -169,7 +178,7 @@ hi PmenuThumb ctermbg=239
 
 " -- Misc built-ins ---------------------------------------------------------------
 hi Comment   ctermfg=239
-hi Special   ctermfg=239          " netrw's tree-bars link here - was a loud pink, now a quiet grey
+hi Special   ctermfg=239          " quiet grey instead of the loud default pink-ish highlight
 hi Directory ctermfg=205 cterm=bold
 hi Question  ctermfg=205
 hi StatusLine   ctermbg=234 ctermfg=253 cterm=none
@@ -213,6 +222,8 @@ noremap <leader>w <C-w>k
 noremap <leader>= <C-w>=
 noremap <leader>+ <C-w>5+
 noremap <leader>- <C-w>5-
+noremap <leader>> <C-w>5>
+noremap <leader>< <C-w>5<
 
 " -- Buffer navigation ---------------------------------------------------------
 nnoremap ]b :bnext<CR>
@@ -263,12 +274,14 @@ function! s:ToggleTerm() abort
         else
             execute 'below sbuffer ' . t:term_bufnr
             resize 16
+            setlocal winfixheight
             startinsert
         endif
     else
         below terminal
         let t:term_bufnr = bufnr('%')
         resize 16
+        setlocal winfixheight
     endif
 endfunction
 
@@ -282,42 +295,39 @@ tnoremap <leader>a  <C-w>h
 
 
 " ==============================================================================
-"  FILE EXPLORER  (native netrw + vim-vinegar, no heavyweight plugin needed)
+"  FILE EXPLORER  (NERDTree - replaces netrw; fern.vim needs Vim 8.2.5136+,
+"  this box only has 8.2.2637, so it can't load)
 " ==============================================================================
 "
-"  <leader>e   toggle a tree-style sidebar explorer (:Lexplore)
-"  <leader>E   open the sidebar rooted at the current file's directory
-"  -           (vinegar) jump into netrw at the current file's directory,
-"              press - again inside netrw to go up a level
+"  <leader>e   toggle a tree-style sidebar explorer, rooted at cwd
+"  <leader>E   toggle the sidebar rooted at the current file's directory
 "
-"  Inside any netrw/explorer buffer:
-"    <CR> / o   open under cursor (o = horizontal split)
-"    v / <C-v>  open under cursor in a vertical split
-"    %          create a new file
-"    d          create a new directory
-"    R          rename/move the file under cursor
-"    D          delete the file under cursor
-"    gh         toggle dotfiles
-"    qf         mark file, qF unmark all - then mc/mm/md to copy/move/delete marks
+"  Inside the NERDTree window:
+"    o / <CR>   open under cursor in the main pane, in place (no split)
+"    i          open under cursor, horizontal split, main pane
+"    s          open under cursor, vertical split, main pane
+"    t          open in a new tab
+"    m          add/move/delete/copy menu for the node under cursor
+"    r / R      refresh directory / refresh the whole tree
+"    I          toggle hidden files
+"    q          close the tree window
+"    ?          toggle the quick-help cheatsheet
+"
+"  NERDTree's i/s splits already jump to the previously-used window before
+"  splitting, so opening a file lands in the main pane instead of splitting
+"  the tree itself - the exact problem netrw had.
 
-let g:netrw_banner    = 0                          " no banner - faster, less clutter
-let g:netrw_liststyle = 3                          " tree view
-let g:netrw_winsize   = 25                         " sidebar width (%)
-let g:netrw_altv      = 1                          " open vsplits to the right
-let g:netrw_keepdir   = 0                          " netrw's cwd follows vim's cwd
-let g:netrw_list_hide = '\.pyc$,__pycache__,\.o$,\.so$'
+let g:NERDTreeShowHidden = 1                       " show dotfiles by default - this is a dotfiles repo
+let g:NERDTreeWinSize    = 30                       " sidebar width in columns
+let g:NERDTreeMinimalUI  = 1                        " no 'Press ? for help' banner - less clutter
+let g:NERDTreeQuitOnOpen = 0                        " keep the tree open after opening a file
 
-nnoremap <leader>e :Lexplore<CR>
-nnoremap <leader>E :Lexplore %:p:h<CR>
+nnoremap <leader>e :NERDTreeToggle<CR>
+nnoremap <leader>E :NERDTreeToggle %:p:h<CR>
 
-" Ctrl-v mirrors netrw's own 'v' (open under cursor in a vertical split)
-autocmd FileType netrw nnoremap <buffer> <C-v> v
-
-" Strip the global number/sign/cursorline/colorcolumn gutters from the sidebar -
-" they don't apply to a file tree and were showing up as a stray blank column.
-" winfixwidth stops other splits opening/closing from resizing the sidebar.
-autocmd FileType netrw setlocal winfixwidth nonumber norelativenumber
-    \ signcolumn=no nocursorline colorcolumn= statusline=\ Explorer
+" Strip the global number/colorcolumn/cursorline from the tree - they don't
+" apply to a file tree (winfixwidth is already set automatically by NERDTree).
+autocmd FileType nerdtree setlocal nonumber norelativenumber nocursorline colorcolumn=
 
 
 " ==============================================================================
