@@ -102,4 +102,17 @@ also run `scram build -j4 compile_commands.json` so clangd sees your flags.
 | `prefix M-1` / `M-2` | preset layouts (editor+terminal, side-by-side / stacked) |
 | `Ctrl-double-click`  | resolve and open a file/path under the mouse in a new split |
 | copy-mode `o`        | open the selected file:line in a new split |
+| copy-mode `v`/`V`/`y`| select / select line / copy to system clipboard |
 | `prefix I`           | install tmux plugins (TPM) |
+
+### Clipboard (this box has no X server - ssh only)
+
+Everything below reaches the **Mac's** system clipboard via OSC52 escape sequences sent
+straight through ssh (through tmux's passthrough too, if you're in a session). Needs a
+terminal that honours OSC52 - iTerm2, Alacritty, Kitty and WezTerm all do by default.
+
+| where               | action |
+|---------------------|--------|
+| vim, any yank/delete| copies to system clipboard automatically |
+| tmux copy-mode `y`  | copies selection to system clipboard |
+| shell               | `<command> \| copy` (alias `pbcopy`) copies stdout |
