@@ -134,17 +134,18 @@ set wildignore+=*.o,*.so,*.pyc,*/.git/*,*/build/*,*/tmp/*
 
 
 " ==============================================================================
-"  COLOURS  -  plain built-in scheme, black background, pink accent
+"  COLOURS  -  plain built-in scheme, black background, neon cyan accent
 "
 "  Palette (matches Alacritty + tmux + bashrc so every surface agrees):
 "    black  ctermbg=black / 234   background & subtle panels
 "    grey   239 / 245             structure: line numbers, splits, dim text
-"    pink   205                   the ONE accent - cursor line, selection,
+"    cyan   51                    the ONE accent - cursor line, selection,
 "                                  search, current-window/identity markers
 "    red 203 / green 114 / yellow 179   functional only (errors/added/warn)
 "  Left as plain built-in highlighting (no colorscheme plugin, no
 "  truecolour) - just pinning every group that otherwise falls back to a
 "  mismatched default.
+"  (lx04 machine - main branch/lxplus keeps the black+pink scheme)
 " ==============================================================================
 
 set background=dark
@@ -162,25 +163,25 @@ hi WinSeparator ctermbg=black ctermfg=239
 " -- Gutter (this is what was showing as a stray white-ish column) --------------
 hi SignColumn    ctermbg=black
 hi LineNr        ctermbg=black ctermfg=239
-hi CursorLineNr  ctermbg=234   ctermfg=205 cterm=bold   " pink - marks your line
+hi CursorLineNr  ctermbg=234   ctermfg=51 cterm=bold   " cyan - marks your line
 
-" -- Selection / search - mirrors Alacritty's pink selection --------------------
+" -- Selection / search - mirrors Alacritty's cyan selection --------------------
 hi Visual   ctermbg=239 ctermfg=253
-hi Search   ctermbg=205 ctermfg=black
-hi IncSearch ctermbg=205 ctermfg=black
-hi MatchParen ctermbg=239 ctermfg=205 cterm=bold
+hi Search   ctermbg=51 ctermfg=black
+hi IncSearch ctermbg=51 ctermfg=black
+hi MatchParen ctermbg=239 ctermfg=51 cterm=bold
 
 " -- Popup / completion menu -----------------------------------------------------
 hi Pmenu     ctermbg=234 ctermfg=253
-hi PmenuSel  ctermbg=205 ctermfg=black
+hi PmenuSel  ctermbg=51 ctermfg=black
 hi PmenuSbar ctermbg=234
 hi PmenuThumb ctermbg=239
 
 " -- Misc built-ins ---------------------------------------------------------------
 hi Comment   ctermfg=239
-hi Special   ctermfg=239          " quiet grey instead of the loud default pink-ish highlight
-hi Directory ctermfg=205 cterm=bold
-hi Question  ctermfg=205
+hi Special   ctermfg=239          " quiet grey instead of a loud default highlight
+hi Directory ctermfg=51 cterm=bold
+hi Question  ctermfg=51
 hi StatusLine   ctermbg=234 ctermfg=253 cterm=none
 hi StatusLineNC ctermbg=234 ctermfg=239 cterm=none
 
@@ -188,7 +189,7 @@ hi StatusLineNC ctermbg=234 ctermfg=239 cterm=none
 hi DiffAdd    ctermbg=234 ctermfg=114
 hi DiffChange ctermbg=234 ctermfg=179
 hi DiffDelete ctermbg=234 ctermfg=203
-hi DiffText   ctermbg=234 ctermfg=205
+hi DiffText   ctermbg=234 ctermfg=51
 hi GitGutterAdd          ctermbg=black ctermfg=114
 hi GitGutterChange       ctermbg=black ctermfg=179
 hi GitGutterDelete       ctermbg=black ctermfg=203

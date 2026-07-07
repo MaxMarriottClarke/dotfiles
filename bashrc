@@ -70,7 +70,7 @@ __prompt_build() {
     local exit_code=$?      # capture FIRST - must be before anything else
 
     # -- colour palette ---------------------------------------------------------
-    # Same as Alacritty/vim/tmux: black bg, one pink accent, grey for structure.
+    # Same as Alacritty/vim/tmux: black bg, one neon cyan accent, grey for structure.
     # Red/green/yellow are kept but used ONLY for genuine status (error/ok/dirty),
     # never for decoration - that's what made the old prompt feel busy.
     local reset='\[\e[0m\]'
@@ -78,7 +78,7 @@ __prompt_build() {
     local red='\[\e[38;5;203m\]'
     local green='\[\e[38;5;114m\]'
     local yellow='\[\e[38;5;179m\]'
-    local pink='\[\e[38;5;205m\]'
+    local cyan='\[\e[38;5;51m\]'
     local gray='\[\e[38;5;245m\]'
     local white='\[\e[38;5;253m\]'
 
@@ -89,9 +89,9 @@ __prompt_build() {
         release=$(basename "$CMSSW_BASE")
         # Check whether cwd is actually inside this CMSSW tree
         if [[ "$PWD" == "$CMSSW_BASE"* ]]; then
-            cms_zone="${gray}[${pink}${release}${green} ok${gray}]${reset} "
+            cms_zone="${gray}[${cyan}${release}${green} ok${gray}]${reset} "
         else
-            cms_zone="${gray}[${pink}${release}${yellow} ~${gray}]${reset} "
+            cms_zone="${gray}[${cyan}${release}${yellow} ~${gray}]${reset} "
         fi
     fi
 
@@ -113,7 +113,7 @@ __prompt_build() {
             git_status=$(git status --porcelain 2>/dev/null)
             local dirty=""
             [[ -n "$git_status" ]] && dirty="${yellow} *${reset}"
-            git_zone="  ${gray}  ${pink}${branch}${dirty}${reset}"
+            git_zone="  ${gray}  ${cyan}${branch}${dirty}${reset}"
         fi
     fi
 
@@ -162,9 +162,9 @@ export FZF_DEFAULT_OPTS="
   --pointer='>'
   --marker='*'
   --separator=''
-  --color=fg:#e6e6e6,bg:-1,hl:#ff6ac1
-  --color=fg+:#ffffff,bg+:#1a1a1a,hl+:#ff6ac1
-  --color=info:#828282,prompt:#ff6ac1,pointer:#ff6ac1
+  --color=fg:#e6e6e6,bg:-1,hl:#00ffff
+  --color=fg+:#ffffff,bg+:#1a1a1a,hl+:#00ffff
+  --color=info:#828282,prompt:#00ffff,pointer:#00ffff
   --color=marker:#7ecb8f,spinner:#7ecb8f,header:#828282
 "
 
