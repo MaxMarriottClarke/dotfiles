@@ -339,7 +339,7 @@ alias hq='condor_q'
 alias hs='condor_submit'
 alias hrm='condor_rm'
 alias hst='condor_status'
-alias hqw='watch -n2 condor_q'
+alias hqw='watch -n10 condor_q'
 alias hqa='condor_q -all'
 
 # -- terminal title (updates tmux window name to current dir) ------------------
