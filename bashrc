@@ -372,4 +372,28 @@ man() {
     command man "$@"
 }
 
+# ==============================================================================
+#  CLIPBOARD
+#  This box is only ever reached over ssh (no X server), so there's no xclip/
+#  pbcopy to shell out to. `copy` instead pushes stdin to the Mac's clipboard
+#  via an OSC52 terminal escape sequence, which travels over plain ssh and
+#  works whether or not tmux is in the middle (it wraps the sequence in
+#  tmux's DCS passthrough when $TMUX is set - needs `set -g set-clipboard on`
+#  in tmux.conf, already set). Needs a terminal that honours OSC52 (iTerm2,
+#  Alacritty, Kitty, WezTerm all do). Vim's yank does the same thing on its
+#  own (see vimrc); this is for everything else, e.g. `git diff | copy`.
+# ==============================================================================
+
+copy() {
+    local esc=$'\033' bel=$'\a' data osc
+    data=$(head -c 100000 | base64 | tr -d '\n')
+    osc="${esc}]52;c;${data}${bel}"
+    if [[ -n "$TMUX" ]]; then
+        printf '%s' "${esc}Ptmux;${esc}${osc}${esc}\\" > /dev/tty
+    else
+        printf '%s' "$osc" > /dev/tty
+    fi
+}
+alias pbcopy=copy
+
 export PATH="$HOME/.local/bin:$PATH"

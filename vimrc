@@ -28,6 +28,9 @@ Plug 'junegunn/fzf.vim'
 Plug 'tpope/vim-fugitive'             " full git workflow inside vim
 Plug 'airblade/vim-gitgutter'         " per-line diff signs + hunk staging
 
+" -- Clipboard (see CLIPBOARD section below) ------------------------------------
+Plug 'ojroques/vim-oscyank', {'branch': 'main'}
+
 " -- Completion & LSP (works on any vim 8+, no version requirement) -----------
 Plug 'prabirshrestha/vim-lsp'
 Plug 'mattn/vim-lsp-settings'          " auto-installs language servers (clangd, pyright)
@@ -105,8 +108,29 @@ set nowritebackup
 set noswapfile
 set autoread                " reload file if changed outside vim
 
-" -- Clipboard -----------------------------------------------------------------
-set clipboard=unnamedplus
+" -- Clipboard -------------------------------------------------------------------
+" This box has no +clipboard/+xterm_clipboard (no X server), so
+" 'clipboard=unnamedplus' is a silent no-op here. Instead, every yank/delete
+" of the unnamed register is pushed to the Mac's system clipboard via an
+" OSC52 terminal escape sequence (ojroques/vim-oscyank). OSC52 travels over
+" plain SSH - no X11 forwarding needed - and tmux forwards it through
+" automatically because 'set-clipboard on' is set in tmux.conf. Needs a
+" terminal that honours OSC52 (iTerm2, Alacritty, Kitty, WezTerm all do).
+let g:oscyank_silent = 1
+if !has('nvim') && !has('clipboard_working')
+    let s:oscyank_registers = ['', '+', '*']
+    let s:oscyank_operators = ['y', 'd']
+    function! s:OscyankOnTextYank(event) abort
+        if index(s:oscyank_registers, a:event.regname) != -1
+            \ && index(s:oscyank_operators, a:event.operator) != -1
+            call OSCYankRegister(a:event.regname)
+        endif
+    endfunction
+    augroup oscyank_auto_copy
+        autocmd!
+        autocmd TextYankPost * call s:OscyankOnTextYank(v:event)
+    augroup END
+endif
 
 " -- Splits open naturally -----------------------------------------------------
 set splitbelow
