@@ -331,6 +331,14 @@ alias s='cd /eos/user/m/mmarriot/Notes/STEAM/'
 # -- EOS -----------------------------------------------------------------------
 alias eos-ls='eos root://eosuser.cern.ch ls /eos/user/m/mmarriot'
 
+# -- HTCondor --------------------------------------------------------------------
+alias hq='condor_q'
+alias hs='condor_submit'
+alias hrm='condor_rm'
+alias hst='condor_status'
+alias hqw='watch -n2 condor_q'
+alias hqa='condor_q -all'
+
 # -- terminal title (updates tmux window name to current dir) ------------------
 case "$TERM" in
   xterm*|rxvt*|screen*|tmux*)
