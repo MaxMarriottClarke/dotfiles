@@ -20,7 +20,7 @@ Plug 'tpope/vim-surround'             " cs\"' to change surrounding quotes etc.
 Plug 'jiangmiao/auto-pairs'           " auto-close brackets, quotes
 
 " -- File navigation -----------------------------------------------------------
-Plug 'preservim/nerdtree'             " tree explorer sidebar (see FILE EXPLORER)
+Plug 'justinmk/vim-dirvish'           " the file explorer: netrw-style, - to go up (see FILE EXPLORER)
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
 
@@ -138,8 +138,8 @@ set splitright
 
 " -- Auto-equalize split sizes --------------------------------------------------
 " Re-equalize on every new window/resize so splits stay evenly sized instead
-" of drifting odd as panes open and close. winfixwidth (NERDTree's sidebar, set
-" automatically) and winfixheight (terminal toggle, set below) stay exempt.
+" of drifting odd as panes open and close. Windows with winfixheight set
+" (the terminal toggle below) stay exempt.
 augroup auto_equalize_splits
     autocmd!
     autocmd VimResized,WinNew * wincmd =
@@ -319,39 +319,181 @@ tnoremap <leader>a  <C-w>h
 
 
 " ==============================================================================
-"  FILE EXPLORER  (NERDTree - replaces netrw; fern.vim needs Vim 8.2.5136+,
-"  this box only has 8.2.2637, so it can't load)
+"  FILE EXPLORER  (dirvish - the only browser; netrw is disabled)
 " ==============================================================================
 "
-"  <leader>e   toggle a tree-style sidebar explorer, rooted at cwd
-"  <leader>E   toggle the sidebar rooted at the current file's directory
+"  Feels like netrw, none of the jank: a listing is just a normal buffer of
+"  real paths, opened full-size in the current window.
 "
-"  Inside the NERDTree window:
-"    o / <CR>   open under cursor in the main pane, in place (no split)
-"    i          open under cursor, horizontal split, main pane
-"    s          open under cursor, vertical split, main pane
-"    t          open in a new tab
-"    m          add/move/delete/copy menu for the node under cursor
-"    r / R      refresh directory / refresh the whole tree
-"    I          toggle hidden files
-"    q          close the tree window
-"    ?          toggle the quick-help cheatsheet
+"    -          from any file: open its directory in this window
+"               from a dirvish listing: go up one directory
+"    <CR>       open file / descend into dir (in this window)
+"    o / a      open in horizontal / vertical split
+"    p          preview file under cursor (<C-n>/<C-p> preview next/prev)
+"    q          quit browsing, back to the file you came from
+"    x          add file to arglist; :Shdo runs a shell cmd over the arglist
+"    ~ / cd     jump to home / :lcd to the browsed dir
+"    K          file info,  R  refresh,  g?  full help
+"    Lines are real paths: y$ yanks the path, /pattern searches names,
+"    and :g!/interface/d style filtering works (R restores the listing).
 "
-"  NERDTree's i/s splits already jump to the previously-used window before
-"  splitting, so opening a file lands in the main pane instead of splitting
-"  the tree itself - the exact problem netrw had.
+"  <leader>e   open the :Scope listing (or cwd listing when no scope is set)
 
-let g:NERDTreeShowHidden = 1                       " show dotfiles by default - this is a dotfiles repo
-let g:NERDTreeWinSize    = 30                       " sidebar width in columns
-let g:NERDTreeMinimalUI  = 1                        " no 'Press ? for help' banner - less clutter
-let g:NERDTreeQuitOnOpen = 0                        " keep the tree open after opening a file
+" Directories first, then files (netrw-style), both alphabetical
+let g:dirvish_mode = ':sort ,^.*[\/],'
 
-nnoremap <leader>e :NERDTreeToggle<CR>
-nnoremap <leader>E :NERDTreeToggle %:p:h<CR>
+" Dirvish replaces netrw entirely - stop netrw loading at all
+let g:loaded_netrwPlugin = 1
 
-" Strip the global number/colorcolumn/cursorline from the tree - they don't
-" apply to a file tree (winfixwidth is already set automatically by NERDTree).
-autocmd FileType nerdtree setlocal nonumber norelativenumber nocursorline colorcolumn=
+nnoremap <leader>e :call <SID>ScopeExplore()<CR>
+
+" Tone down the globals in listings (keep cursorline - it marks the selection)
+autocmd FileType dirvish setlocal nonumber norelativenumber colorcolumn=
+
+
+" ==============================================================================
+"  SCOPED WORKSPACE  (:Scope - work on a chosen subset of a huge tree)
+" ==============================================================================
+"
+"  CMSSW is enormous but you only ever touch a few packages at a time.
+"  Declare the ones you're working on and the explorer + fuzzy finders
+"  narrow to just those - no config files, no session state, just a command:
+"
+"    :Scope L1Trigger/L1THGCal DataFormats/L1THGCal
+"                     set the working set; args tab-complete against both
+"                     the cwd and $CMSSW_BASE/src, so plain package names work
+"    :Scope           show the current working set
+"    :ScopeClear      back to seeing everything
+"
+"  While a scope is set:
+"    <leader>e    dirvish listing of just the scope dirs - your table of
+"                 contents: <CR> descends into one, <leader>e comes back
+"                 (plain cwd listing when no scope is set)
+"    -            inside a scoped dir, going up stops AT the scope: from the
+"                 top of a scope dir, - returns to the scope listing instead
+"                 of the real (huge) parent directory
+"    <leader>ff   fuzzy-find files across the scope dirs only
+"    <leader>fr   live grep across the scope dirs only
+
+let g:scope_dirs = get(g:, 'scope_dirs', [])
+
+function! s:ResolveScopeDir(arg) abort
+    if isdirectory(expand(a:arg))
+        return expand(a:arg)
+    endif
+    if !empty($CMSSW_BASE) && isdirectory($CMSSW_BASE . '/src/' . a:arg)
+        return $CMSSW_BASE . '/src/' . a:arg
+    endif
+    return ''
+endfunction
+
+function! s:SetScope(args) abort
+    if empty(a:args)
+        echo empty(g:scope_dirs) ? 'No scope set  (:Scope dir1 dir2 ...)'
+                                \ : 'Scope: ' . join(g:scope_dirs, '  ')
+        return
+    endif
+    let dirs = []
+    for arg in a:args
+        let dir = s:ResolveScopeDir(arg)
+        if empty(dir)
+            echohl WarningMsg
+            echomsg 'Not a directory (checked cwd and $CMSSW_BASE/src): ' . arg
+            echohl None
+        else
+            call add(dirs, substitute(dir, '/$', '', ''))
+        endif
+    endfor
+    if empty(dirs) | return | endif      " nothing resolved - keep the old scope
+    let g:scope_dirs = dirs
+    echo 'Scope: ' . join(g:scope_dirs, '  ')
+endfunction
+
+function! s:ScopeComplete(lead, line, pos) abort
+    let out = glob(a:lead . '*/', 1, 1)
+    if !empty($CMSSW_BASE)
+        let src = $CMSSW_BASE . '/src/'
+        let out += map(glob(src . a:lead . '*/', 1, 1), 'strpart(v:val, len(src))')
+    endif
+    return map(out, "substitute(v:val, '/$', '', '')")
+endfunction
+
+command! -nargs=* -complete=customlist,s:ScopeComplete Scope call s:SetScope([<f-args>])
+command! ScopeClear let g:scope_dirs = [] | echo 'Scope cleared'
+
+" -- Explorer integration --------------------------------------------------------
+" A dirvish listing of the scope dirs. This is dirvish's documented "any
+" buffer of paths + setf dirvish" pattern (see its README) - every dirvish
+" mapping works on it: <CR> descends, o/a split, p previews.
+function! s:ScopeExplore() abort
+    if empty(g:scope_dirs)
+        Dirvish
+        return
+    endif
+    " One reusable scratch buffer. NB: bufhidden must stay 'hide' - dirvish
+    " refuses to navigate away from a buffer it would delete.
+    let buf = bufnr('^scope://$')
+    if buf == -1
+        enew
+        silent file scope://
+        setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
+    else
+        execute 'silent buffer' buf
+        setlocal modifiable
+        silent %delete _
+    endif
+    call setline(1, map(copy(g:scope_dirs), 'v:val . "/"'))
+    setfiletype dirvish
+endfunction
+
+" Scope-aware 'go up': the scope listing acts as the virtual parent of each
+" scope dir, so - never dumps you into the huge real parent by accident.
+function! s:IsScopeRoot(path) abort
+    let p = substitute(fnamemodify(a:path, ':p'), '/\+$', '', '')
+    for dir in g:scope_dirs
+        if substitute(fnamemodify(dir, ':p'), '/\+$', '', '') ==# p
+            return 1
+        endif
+    endfor
+    return 0
+endfunction
+
+function! s:DirvishUp() abort
+    if @% ==# 'scope://'
+        echo 'Top of scope  (:Scope to list it, :ScopeClear to browse freely)'
+        return
+    endif
+    if !empty(g:scope_dirs) && s:IsScopeRoot(@%)
+        call s:ScopeExplore()
+    else
+        " what <Plug>(dirvish_up) does: dirvish buffer names end in /, so
+        " :h:h of the absolute path is the parent directory
+        execute 'Dirvish' fnameescape(fnamemodify(@%, ':p:h:h'))
+    endif
+endfunction
+
+autocmd FileType dirvish nnoremap <buffer><silent> - :call <SID>DirvishUp()<CR>
+
+" -- fzf integration ---------------------------------------------------------------
+function! s:ScopedFiles() abort
+    if empty(g:scope_dirs)
+        Files
+        return
+    endif
+    let dirs = join(map(copy(g:scope_dirs), 'shellescape(v:val)'))
+    let src  = executable('rg') ? 'rg --files ' . dirs
+             \ : 'find ' . dirs . ' -type f -not -path ''*/.git/*'''
+    call fzf#run(fzf#wrap('scope-files', {'source': src, 'sink': 'e'}))
+endfunction
+
+function! s:ScopedRg(query) abort
+    let dirs = join(map(copy(g:scope_dirs), 'shellescape(v:val)'))
+    call fzf#vim#grep('rg --column --line-number --no-heading --color=always --smart-case '
+                \ . shellescape(a:query) . ' ' . dirs, 1, 0)
+endfunction
+
+command! ScopedFiles call s:ScopedFiles()
+command! -nargs=* ScopedRg call s:ScopedRg(<q-args>)
 
 
 " ==============================================================================
@@ -365,9 +507,10 @@ let g:fzf_layout = { 'down': '40%' }
 
 " -- Mappings ------------------------------------------------------------------
 " ff=files, fg=git files, fr=ripgrep, fb=buffers, fh=history, fl=lines, fm=marks
-nnoremap <leader>ff :Files<CR>
+" ff and fr respect :Scope when one is set (identical to :Files/:Rg otherwise)
+nnoremap <leader>ff :ScopedFiles<CR>
 nnoremap <leader>fg :GFiles<CR>
-nnoremap <leader>fr :Rg<CR>
+nnoremap <leader>fr :ScopedRg<CR>
 nnoremap <leader>fb :Buffers<CR>
 nnoremap <leader>fh :History<CR>
 nnoremap <leader>fl :BLines<CR>
@@ -502,6 +645,12 @@ function! s:AddCMSSWPaths()
     if empty(cmssw) | return | endif
     execute 'set path+=' . cmssw . '/src/**'
     execute 'set path+=' . cmssw . '/lib/**'
+    " Release area too, so gf works on headers of packages you haven't checked
+    " out. Plain /src, no ** - includes are already Package/Sub/... relative to
+    " src, and recursing into a full release on cvmfs would take forever.
+    for base in [$CMSSW_FULL_RELEASE_BASE, $CMSSW_RELEASE_BASE]
+        if !empty(base) | execute 'set path+=' . base . '/src' | endif
+    endfor
 endfunction
 call s:AddCMSSWPaths()
 
@@ -512,17 +661,22 @@ nnoremap <leader>cf :call OpenCMSSWPath()<CR>
 nnoremap <leader>cv :call OpenCMSSWPathSplit()<CR>
 
 function! OpenCMSSWPath()
-    let cmssw = $CMSSW_BASE
     let token = expand('<cfile>')
     if filereadable(token) || isdirectory(token)
         execute 'edit ' . fnameescape(token) | return
     endif
-    if !empty(cmssw)
-        let full = cmssw . '/src/' . token
+    " Direct hit in the local area first, then the release area
+    for base in [$CMSSW_BASE, $CMSSW_FULL_RELEASE_BASE, $CMSSW_RELEASE_BASE]
+        if empty(base) | continue | endif
+        let full = base . '/src/' . token
         if filereadable(full) || isdirectory(full)
             execute 'edit ' . fnameescape(full) | return
         endif
-        let hits = globpath(cmssw . '/src', '**/' . fnamemodify(token, ':t'), 0, 1)
+    endfor
+    " Basename search as a fallback - local checkout only (a ** crawl of the
+    " full release on cvmfs would hang)
+    if !empty($CMSSW_BASE)
+        let hits = globpath($CMSSW_BASE . '/src', '**/' . fnamemodify(token, ':t'), 0, 1)
         if !empty(hits)
             if len(hits) == 1
                 execute 'edit ' . fnameescape(hits[0])
@@ -549,6 +703,78 @@ function! OpenCMSSWPathSplit()
     if empty(full) | echo "Not found: " . token | return | endif
     execute 'vsplit ' . fnameescape(full)
 endfunction
+
+" -- CMSSW path completion (insert mode: <C-x><C-u>) -----------------------------
+"  Completes CMSSW paths in any file, against $CMSSW_BASE/src AND the full
+"  release area - so it works for packages you haven't checked out, with no
+"  LSP or compile_commands.json needed. Plain vimscript glob, always works.
+"
+"    C++ (and everything else): slash paths, e.g. inside #include "..."
+"        DataFormats/L1THGC<C-x><C-u>  ->  DataFormats/L1THGCalDigi/
+"    Python: dotted module paths (process.load / import style), aware that
+"        Package.Sub.module maps to Package/Sub/python/module.py, and also
+"        completes generated *_cfi modules from cfipython/
+"
+"  Directories complete with a trailing / or . - press <C-x><C-u> again to
+"  descend a level. Tab/S-Tab cycles the menu, CR confirms (as everywhere).
+
+function! CmsswPathComplete(findstart, base) abort
+    if a:findstart
+        let line  = getline('.')
+        let start = col('.') - 1
+        while start > 0 && line[start - 1] =~# '[A-Za-z0-9_./-]'
+            let start -= 1
+        endwhile
+        return start
+    endif
+
+    " Python completes dotted module paths unless a / says it's a real file path
+    let dotted = &filetype ==# 'python' && a:base !~# '/'
+    let token  = dotted ? substitute(a:base, '\.', '/', 'g') : a:base
+
+    " [root, style] pairs. 'src' inserts the implicit python/ dir in dotted
+    " mode; 'cfi' is the flat cfipython/<arch>/Pkg/Sub/x_cfi.py layout.
+    let roots = []
+    for base in [$CMSSW_BASE, $CMSSW_FULL_RELEASE_BASE, $CMSSW_RELEASE_BASE]
+        if empty(base) | continue | endif
+        call add(roots, [base . '/src', 'src'])
+        if dotted && !empty($SCRAM_ARCH)
+            call add(roots, [base . '/cfipython/' . $SCRAM_ARCH, 'cfi'])
+        endif
+    endfor
+
+    let out  = []
+    let seen = {}
+    for [root, style] in roots
+        if !isdirectory(root) | continue | endif
+        let pat = token
+        if dotted && style ==# 'src'
+            let comps = split(token, '/', 1)
+            if len(comps) >= 3
+                let pat = comps[0] . '/' . comps[1] . '/python/' . join(comps[2:], '/')
+            endif
+        endif
+        " nosuf=1: don't let wildignore silently hide results
+        for hit in glob(root . '/' . pat . '*', 1, 1)
+            let rel   = strpart(hit, len(root) + 1)
+            let isdir = isdirectory(hit)
+            if dotted
+                if !isdir && rel !~# '\.py$' | continue | endif
+                let rel  = substitute(rel, '/python/', '/', '')
+                let rel  = substitute(rel, '\.py$', '', '')
+                let word = substitute(rel, '/', '.', 'g') . (isdir ? '.' : '')
+            else
+                let word = rel . (isdir ? '/' : '')
+            endif
+            if has_key(seen, word) | continue | endif
+            let seen[word] = 1
+            call add(out, {'word': word, 'menu': isdir ? '/' : ''})
+        endfor
+    endfor
+    return sort(out, {a, b -> a.word ==# b.word ? 0 : a.word ># b.word ? 1 : -1})
+endfunction
+
+set completefunc=CmsswPathComplete
 
 
 " ==============================================================================
