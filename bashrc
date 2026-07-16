@@ -17,8 +17,19 @@ export SCRAM_ARCH=el8_amd64_gcc13
 export EDITOR=vim
 export VISUAL=vim
 
-# -- PATH (idempotent helper so re-sourcing never duplicates entries) ----------
-_path_prepend() { [[ ":$PATH:" != *":$1:"* ]] && export PATH="$1:$PATH"; }
+# -- PATH (idempotent helper: moves dir to front, no duplicate entries) --------
+_path_prepend() {
+    local IFS=:
+    local dir stripped=()
+    for dir in $PATH; do
+        [[ "$dir" == "$1" ]] || stripped+=("$dir")
+    done
+    export PATH="$1:${stripped[*]}"
+}
+
+# Homebrew ships ahead of Apple's ancient /bin/bash (3.2) so bare `bash` picks up 5.x
+_path_prepend "/opt/homebrew/sbin"
+_path_prepend "/opt/homebrew/bin"
 
 _path_prepend "/afs/cern.ch/user/m/mmarriot/tools/node/bin"
 
@@ -392,5 +403,7 @@ copy() {
     fi
 }
 alias pbcopy=copy
+
+set -o vi
 
 export PATH="$HOME/.local/bin:$PATH"
